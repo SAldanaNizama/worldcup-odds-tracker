@@ -230,6 +230,7 @@ def insert_odds_snapshots(supabase: Client, event_id: str, game: dict):
                     "market_id": market_id,
                     "selection": selection,
                     "odds": odds,
+                    "implied_probability": round(1 / float(odds), 6),
                     "snapshot_time": snapshot_time,
                     "source": SOURCE_NAME,
                     "raw_data": {

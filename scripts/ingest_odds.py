@@ -134,13 +134,9 @@ def upsert_event(supabase: Client, game: dict):
 
 def upsert_bookmaker(supabase: Client, bookmaker: dict):
     bookmaker_slug = bookmaker["key"]
+    bookmaker_name = bookmaker.get("title", bookmaker_slug)
 
-    bookmaker_data = {
-        "name": bookmaker.get("title", bookmaker_slug),
-        "slug": bookmaker_slug,
-    }
-
-    existing = (
+    existing_by_slug = (
         supabase
         .table("bookmakers")
         .select("id")
@@ -149,8 +145,31 @@ def upsert_bookmaker(supabase: Client, bookmaker: dict):
         .execute()
     )
 
-    if existing.data:
-        return existing.data[0]["id"]
+    if existing_by_slug.data:
+        return existing_by_slug.data[0]["id"]
+
+    existing_by_name = (
+        supabase
+        .table("bookmakers")
+        .select("id")
+        .eq("name", bookmaker_name)
+        .limit(1)
+        .execute()
+    )
+
+    if existing_by_name.data:
+        bookmaker_id = existing_by_name.data[0]["id"]
+
+        supabase.table("bookmakers").update({
+            "slug": bookmaker_slug
+        }).eq("id", bookmaker_id).execute()
+
+        return bookmaker_id
+
+    bookmaker_data = {
+        "name": bookmaker_name,
+        "slug": bookmaker_slug,
+    }
 
     inserted = supabase.table("bookmakers").insert(bookmaker_data).execute()
     return inserted.data[0]["id"]
